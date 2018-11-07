@@ -2,12 +2,13 @@
 
 lpad_file_path = '/global/homes/d/dbroberg/atomate_fworkers/my_launchpad.yaml'
 
+import os
 # import random
 # import numpy as np
 #
-# from pymatgen.core import Element, Structure, Lattice
-# from pymatgen.io.vasp import Poscar
-#
+from pymatgen.core import Composition  #Element, Structure, Lattice
+from pymatgen.io.vasp import Poscar
+
 # from atomate.vasp.fireworks.core import StaticFW
 #
 from fireworks import Workflow
@@ -21,7 +22,7 @@ from atomate.vasp.fireworks.core import OptimizeFW
 """Lattice constant workflow related"""
 
 def generate_lattconst_wf( list_elt_sets, functional='PBE', vasp_cmd = '>>vasp_cmd<<',
-                           db_file = '>>db_file<<', submit=False):
+                           db_file = '>>db_file<<', submit=False, scan_smart_lattice=None):
     """Generates a workflow which calculates lattice constants through optimization fireworks for a given functional type"""
 
     if functional in ['PBE', 'LDA']:
@@ -30,12 +31,21 @@ def generate_lattconst_wf( list_elt_sets, functional='PBE', vasp_cmd = '>>vasp_c
     elif functional in ['SCAN']:
         job_type = 'metagga_opt_run'
         potcar_type = 'PBE' #this is the POTCAR that needs to be used for SCAN...
+        if scan_smart_lattice is None:
+            raise ValueError("Need to provide a smarter starting point "
+                             "for SCAN lattice constants...")
 
     fws = []
     incar_settings = {"ADDGRID": True, 'EDIFF': 1e-8, 'NELMIN': 6}
 
     for elt_set in list_elt_sets:
-        pp = PerfectPerovskite( Asite=elt_set[0], Bsite=elt_set[1], Osite=elt_set[2])
+        if functional == 'SCAN':
+            compkey = Composition({elt_set[0]: 1, elt_set[1]: 1, elt_set[2]: 3})
+            lattconst = scan_smart_lattice[compkey]
+        else:
+            lattconst = None
+        pp = PerfectPerovskite( Asite=elt_set[0], Bsite=elt_set[1], Osite=elt_set[2],
+                                lattconst = lattconst)
         s = pp.get_111_struct()
 
         vis = MPRelaxSet( s, user_incar_settings=incar_settings, potcar_functional=potcar_type)
@@ -69,8 +79,17 @@ def parse_wf_for_latt_constants( wf_id):
             print('\t\tstatus = {}, so skipping'.format( fw.state))
             continue
 
-        
+        pat = fw.launches[-1].launch_dir
+        s = Poscar.from_file( os.path.join( pat, 'CONTCAR.relax2.gz')).structure
 
+        if s.composition in lattdata:
+            raise ValueError("{} already exists in lattdata??".format( s.composition))
+        elif (max(s.lattice.abc) - min(s.lattice.abc)) > 0.00001 or  (max(s.lattice.angles) - min(s.lattice.angles)) > 0.00001:
+            raise ValueError("Error occured with lattice relaxation??".format( s.lattice))
+        else:
+            lattdata.update( {s.composition: s.lattice.abc[0]})
+
+    print('\nFinalized lattice constant set:\n{}'.format( lattdata))
 
     return
 
@@ -172,6 +191,11 @@ if __name__ == "__main__":
                  ['Sm', 'Sc', 'O'],
                  ['La', 'Lu', 'O']]
 
-    for func in ['PBE', 'LDA', 'SCAN']:
-        # generate_lattconst_wf(init_list, functional=func, submit=False)
-        generate_lattconst_wf([init_list[0]], functional=func, submit=True)
+    # for func in ['PBE', 'LDA']:
+    #     # generate_lattconst_wf(init_list, functional=func, submit=False)
+    #     generate_lattconst_wf([init_list[0]], functional=func, submit=True)
+
+    parse_wf_for_latt_constants( 3257)
+
+    # generate_lattconst_wf([init_list[0]], functional='SCAN', submit=True,
+                          )
