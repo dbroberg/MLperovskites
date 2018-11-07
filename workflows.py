@@ -40,7 +40,7 @@ def generate_lattconst_wf( list_elt_sets, functional='PBE', vasp_cmd = '>>vasp_c
 
         vis = MPRelaxSet( s, user_incar_settings=incar_settings, potcar_functional=potcar_type)
 
-        fw = OptimizeFW(s, name=s.composition.reduced_formula + " structure optimization",
+        fw = OptimizeFW(s, name="{} {} structure optimization".format(s.composition.reduced_formula, functional),
                         vasp_input_set=vis, vasp_cmd=vasp_cmd, db_file=db_file,
                         job_type=job_type, auto_npar=">>auto_npar<<")
         fws.append( fw)
@@ -60,7 +60,16 @@ def parse_wf_for_latt_constants( wf_id):
     wf = lpad.get_wf_by_fw_id( wf_id)
 
     lattdata = {}
-    print('{}')
+    print('{} workflow retrieved with {} fws in it'.format( wf.name, len(wf.fws)))
+    for fw in wf.fws:
+        print('\t{}'.format( fw.name))
+        if 'structure optimization' not in fw.name:
+            raise ValueError("Not a recognized firework!")
+        elif fw.state != 'COMPLETED':
+            print('\t\tstatus = {}, so skipping'.format( fw.state))
+            continue
+
+        
 
 
     return
