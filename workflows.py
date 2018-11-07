@@ -200,7 +200,11 @@ if __name__ == "__main__":
     # for func in ['PBE', 'LDA']:
     #     generate_lattconst_wf(init_list, functional=func, submit=True)
 
-    # gga_latt_dict = parse_wf_for_latt_constants( 3301)
-    gga_latt_dict = parse_wf_for_latt_constants( 3257)
-    generate_lattconst_wf([init_list[0]], functional='SCAN', submit=True,
-                          scan_smart_lattice=gga_latt_dict)
+    gga_latt_dict = parse_wf_for_latt_constants( 3301)
+    lda_latt_dict = parse_wf_for_latt_constants( 3321)
+    from monty.serialization import dumpfn
+    dumpfn( {'gga': gga_latt_dict, 'lda': lda_latt_dict}, 'latt_consts.json')
+
+    # gga_latt_dict = parse_wf_for_latt_constants( 3257)
+    # generate_lattconst_wf([init_list[0]], functional='SCAN', submit=True,
+    #                       scan_smart_lattice=gga_latt_dict)
