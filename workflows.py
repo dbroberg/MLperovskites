@@ -31,7 +31,7 @@ def generate_lattconst_wf( list_elt_sets, functional='PBE', vasp_cmd = '>>vasp_c
         potcar_type = 'PBE' #this is the POTCAR that needs to be used for SCAN...
 
     fws = []
-    incar_settings = {"ADDGRID": True, 'EDIFF': 1e-7, 'NELMIN': 6}
+    incar_settings = {"ADDGRID": True, 'EDIFF': 1e-8, 'NELMIN': 6}
 
     for elt_set in list_elt_sets:
         pp = PerfectPerovskite( Asite=elt_set[0], Bsite=elt_set[1], Osite=elt_set[2])
@@ -44,13 +44,13 @@ def generate_lattconst_wf( list_elt_sets, functional='PBE', vasp_cmd = '>>vasp_c
                         job_type=job_type, auto_npar=">>auto_npar<<")
         fws.append( fw)
 
-    wf = Workflow( fws, name='{} lattice constant workflow'.format( functional))
+    wf = Workflow( fws, name='{} latt const workflow'.format( functional))
     if submit:
-        print('Submitting workflow')
+        print('Submitting workflow with {} fws for {}'.format( len(list_elt_sets), functional))
         lpad = LaunchPad().from_file(lpad_file_path)
         lpad.add_wf( wf)
     else:
-        print('Workflow created!')
+        print('Workflow created with {} fws for {}'.format( len(list_elt_sets), functional))
         return wf
 
 
@@ -151,5 +151,5 @@ if __name__ == "__main__":
                  ['La', 'Lu', 'O']]
 
     for func in ['PBE', 'LDA', 'SCAN']:
-        # generate_lattconst_wf(list_elt_sets, functional='PBE', submit=False)
-        generate_lattconst_wf([list_elt_sets[0]], functional='PBE', submit=False)
+        # generate_lattconst_wf(init_list, functional='PBE', submit=False)
+        generate_lattconst_wf([init_list[0]], functional='PBE', submit=False)
