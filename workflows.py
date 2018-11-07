@@ -18,6 +18,7 @@ from structure import PerfectPerovskite
 from pymatgen.io.vasp.sets import MPRelaxSet
 from atomate.vasp.fireworks.core import OptimizeFW
 
+"""Lattice constant workflow related"""
 
 def generate_lattconst_wf( list_elt_sets, functional='PBE', vasp_cmd = '>>vasp_cmd<<',
                            db_file = '>>db_file<<', submit=False):
@@ -53,8 +54,20 @@ def generate_lattconst_wf( list_elt_sets, functional='PBE', vasp_cmd = '>>vasp_c
         print('Workflow created with {} fws for {}'.format( len(list_elt_sets), functional))
         return wf
 
+def parse_wf_for_latt_constants( wf_id):
+    lpad = LaunchPad().from_file(lpad_file_path)
+
+    wf = lpad.get_wf_by_fw_id( wf_id)
+
+    lattdata = {}
+    print('{}')
 
 
+    return
+
+
+
+"""Perturbation workflow related"""
 
 class PerturbWFsetup(object):
     def __init__(self, perovskite, structure_type='111',
@@ -151,5 +164,5 @@ if __name__ == "__main__":
                  ['La', 'Lu', 'O']]
 
     for func in ['PBE', 'LDA', 'SCAN']:
-        # generate_lattconst_wf(init_list, functional='PBE', submit=False)
-        generate_lattconst_wf([init_list[0]], functional='PBE', submit=False)
+        # generate_lattconst_wf(init_list, functional=func, submit=False)
+        generate_lattconst_wf([init_list[0]], functional=func, submit=True)
