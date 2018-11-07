@@ -91,7 +91,7 @@ def parse_wf_for_latt_constants( wf_id):
 
     print('\nFinalized lattice constant set:\n{}'.format( lattdata))
 
-    return
+    return lattdata
 
 
 
@@ -195,7 +195,6 @@ if __name__ == "__main__":
     #     # generate_lattconst_wf(init_list, functional=func, submit=False)
     #     generate_lattconst_wf([init_list[0]], functional=func, submit=True)
 
-    parse_wf_for_latt_constants( 3257)
-
-    # generate_lattconst_wf([init_list[0]], functional='SCAN', submit=True,
-                          )
+    gga_latt_dict = parse_wf_for_latt_constants( 3257)
+    generate_lattconst_wf([init_list[0]], functional='SCAN', submit=True,
+                          scan_smart_lattice=gga_latt_dict)
