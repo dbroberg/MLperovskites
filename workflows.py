@@ -32,11 +32,11 @@ def generate_lattconst_wf( list_elt_sets, functional='PBE', vasp_cmd = '>>vasp_c
     if functional in ['PBE', 'LDA']:
         job_type = 'double_relaxation_run'
         potcar_type = functional
-        incar_settings = {"ADDGRID": True, 'EDIFF': 1e-8, 'NELMIN': 6}
+        incar_settings = {"ADDGRID": True, 'EDIFF': 1e-8}
     elif functional in ['SCAN']:
         job_type = 'metagga_opt_run'
         potcar_type = 'PBE' #this is the POTCAR that needs to be used for SCAN...
-        incar_settings = {'EDIFF': 1e-8, 'NELMIN': 6}
+        incar_settings = {'EDIFF': 1e-8}
         if scan_smart_lattice is None:
             raise ValueError("Need to provide a smarter starting point "
                              "for SCAN lattice constants...")
@@ -198,10 +198,9 @@ if __name__ == "__main__":
 
     # generate_lattconst_wf([init_list[0]], functional='LDA', submit=True)
 
-    # for func in ['PBE', 'LDA']:
-    # #     # generate_lattconst_wf(init_list, functional=func, submit=False)
-    #     generate_lattconst_wf([init_list[0]], functional=func, submit=True)
+    for func in ['PBE', 'LDA']:
+        generate_lattconst_wf(init_list, functional=func, submit=True)
 
-    gga_latt_dict = parse_wf_for_latt_constants( 3257)
-    generate_lattconst_wf([init_list[0]], functional='SCAN', submit=True,
-                          scan_smart_lattice=gga_latt_dict)
+    # gga_latt_dict = parse_wf_for_latt_constants( 3257)
+    # generate_lattconst_wf([init_list[0]], functional='SCAN', submit=True,
+    #                       scan_smart_lattice=gga_latt_dict)
