@@ -189,14 +189,13 @@ if __name__ == "__main__":
                  ['Li', 'Nb', 'O'],
                  ['La', 'Al', 'O'],
                  ['Li', 'Ta', 'O'],
+                 ['La', 'Ta', 'O'],
                  ['Y', 'Al', 'O'],
                  ['Gd', 'Sc', 'O'],
                  ['Dy', 'Sc', 'O'],
                  ['Nd', 'Sc', 'O'],
                  ['Sm', 'Sc', 'O'],
                  ['La', 'Lu', 'O']]
-
-    # generate_lattconst_wf([init_list[0]], functional='LDA', submit=True)
 
     for func in ['PBE', 'LDA']:
         generate_lattconst_wf(init_list, functional=func, submit=True)
