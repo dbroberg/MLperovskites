@@ -3,9 +3,8 @@
 lpad_file_path = '/global/homes/d/dbroberg/atomate_fworkers/my_launchpad.yaml'
 
 import os
-# import random
-# import numpy as np
-#
+import numpy as np
+
 from pymatgen.core import Composition  #Element, Structure, Lattice
 from pymatgen.io.vasp import Poscar
 
@@ -17,7 +16,9 @@ from fireworks.core.launchpad import LaunchPad
 from structure import PerfectPerovskite
 
 from pymatgen.io.vasp.sets import MPRelaxSet
+
 from atomate.vasp.fireworks.core import OptimizeFW
+from atomate.vasp.workflows.base.ferroelectric import get_wf_ferroelectric
 
 """Lattice constant workflow related"""
 
@@ -97,6 +98,31 @@ def parse_wf_for_latt_constants( wf_id):
     print('\nFinalized lattice constant set:\n{}'.format( lattdata))
 
     return lattdata
+
+
+"""LCALCEPs workflow related"""
+
+def polarization_wf( polar_structure, nonpolar_structure, submit=False, wfid=None):
+
+    vasp_input_set_params = {'user_incar_settings': {"ADDGRID": True, 'EDIFF': 1e-8, "NELMIN": 6}}
+    wf = get_wf_ferroelectric( polar_structure, nonpolar_structure, vasp_cmd=">>vasp_cmd<<",
+                              db_file='>>db_file<<', vasp_input_set_polar="MPStaticSet",
+                              vasp_input_set_nonpolar="MPStaticSet", relax=False,
+                              vasp_relax_input_set_polar=vasp_input_set_params,
+                              vasp_relax_input_set_nonpolar=vasp_input_set_params,
+                              nimages=5, hse=False, add_analysis_task=True,
+                              wfid=wfid, tags=None)
+
+    print('workflow created with {} fws'.format( len(wf.fws)))
+
+    if submit:
+        print("Submitting Polarization workflow")
+        lp = LaunchPad().from_file( lpad_file_path)
+        lp.add_wf(wf)
+    else:
+        return wf
+
+
 
 
 
@@ -197,16 +223,32 @@ if __name__ == "__main__":
                  ['Sm', 'Sc', 'O'],
                  ['La', 'Lu', 'O']]
 
+    """Lattice constant generation related"""
     # for func in ['PBE', 'LDA']:
     #     generate_lattconst_wf(init_list, functional=func, submit=True)
-
-    gga_latt_dict = parse_wf_for_latt_constants( 3301)
-    lda_latt_dict = parse_wf_for_latt_constants( 3321)
-    from monty.serialization import dumpfn
-    from monty.json import MontyEncoder
-
-    dumpfn( {'gga': gga_latt_dict, 'lda': lda_latt_dict}, 'latt_consts.json', cls=MontyEncoder)
 
     # gga_latt_dict = parse_wf_for_latt_constants( 3257)
     # generate_lattconst_wf([init_list[0]], functional='SCAN', submit=True,
     #                       scan_smart_lattice=gga_latt_dict)
+
+    # gga_latt_dict = parse_wf_for_latt_constants( 3301)
+    # lda_latt_dict = parse_wf_for_latt_constants( 3321)
+    # from monty.serialization import dumpfn
+    # from monty.json import MontyEncoder
+    #
+    # dumpfn( {'gga': gga_latt_dict, 'lda': lda_latt_dict}, 'latt_consts.json', cls=MontyEncoder)
+
+    """Polarization related"""
+    #first test on a known polar material (PbTiO3)
+    from pymatgen import MPRester, Structure
+    with MPRester() as mp:
+        s = mp.get_structure_by_material_id('mp-19845')
+    pert_coords = []
+    for site in s.sites:
+        if site.specie.symbol == 'Ti':
+            pert_coords.append( site.coords + np.array( [0., 0., 0.1]))
+        else:
+            pert_coords.append( site.coords)
+    pert_struct = Structure( s.lattice, s.species, pert_coords, coords_are_cartesian=True)
+
+    polarization_wf(s, pert_struct, submit=False, wfid="TestPbTiO3")
