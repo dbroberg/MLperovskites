@@ -203,7 +203,9 @@ if __name__ == "__main__":
     gga_latt_dict = parse_wf_for_latt_constants( 3301)
     lda_latt_dict = parse_wf_for_latt_constants( 3321)
     from monty.serialization import dumpfn
-    dumpfn( {'gga': gga_latt_dict, 'lda': lda_latt_dict}, 'latt_consts.json')
+    from monty.json import MontyEncoder
+
+    dumpfn( {'gga': gga_latt_dict, 'lda': lda_latt_dict}, 'latt_consts.json', cls=MontyEncoder)
 
     # gga_latt_dict = parse_wf_for_latt_constants( 3257)
     # generate_lattconst_wf([init_list[0]], functional='SCAN', submit=True,
