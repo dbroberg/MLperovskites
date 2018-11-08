@@ -86,13 +86,13 @@ def parse_wf_for_latt_constants( wf_id):
 
         pat = fw.launches[-1].launch_dir
         s = Poscar.from_file( os.path.join( pat, 'CONTCAR.relax2.gz')).structure
-
-        if s.composition in lattdata:
-            raise ValueError("{} already exists in lattdata??".format( s.composition))
+        nom = s.composition.reduced_formula
+        if nom in lattdata:
+            raise ValueError("{} already exists in lattdata??".format( nom))
         elif (max(s.lattice.abc) - min(s.lattice.abc)) > 0.00001 or  (max(s.lattice.angles) - min(s.lattice.angles)) > 0.00001:
             raise ValueError("Error occured with lattice relaxation??".format( s.lattice))
         else:
-            lattdata.update( {s.composition: s.lattice.abc[0]})
+            lattdata.update( {nom: s.lattice.abc[0]})
 
     print('\nFinalized lattice constant set:\n{}'.format( lattdata))
 
