@@ -146,7 +146,10 @@ class StrainedPerovskite( object):
             return vector / vnorm * perturb_amnt if vnorm != 0 else get_rand_vec()
 
         base_struct = base_perovskite_cls.get_struct_from_structure_type( structure_type)
-        atomic_perturbations = [get_rand_vec() for ind in range(len(base_struct))]
+        for siteind, site in enumerate(base_struct.sites): #find the first A-site atom, because we will not perturb this atom
+            if site.specie == base_perovskite_cls.eltA:
+                break
+        atomic_perturbations = [get_rand_vec() if ind != siteind else np.array([0.,0.,0.]) for ind in range(len(base_struct))]
 
         return StrainedPerovskite( base_perovskite_cls, strain_tensor,
                                    atomic_perturbations, structure_type=structure_type)

@@ -122,10 +122,6 @@ def polarization_wf( polar_structure, nonpolar_structure, submit=False, wfid=Non
     else:
         return wf
 
-
-
-
-
 """Perturbation workflow related"""
 
 class PerturbWFsetup(object):
