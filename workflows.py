@@ -104,12 +104,17 @@ def parse_wf_for_latt_constants( wf_id):
 
 def polarization_wf( polar_structure, nonpolar_structure, submit=False, wfid=None):
 
-    vasp_input_set_params = {'user_incar_settings': {"ADDGRID": True, 'EDIFF': 1e-8, "NELMIN": 6}}
+    #TODO hack ability to add incar settings...
+    # vasp_input_set_params = {'user_incar_settings': {"ADDGRID": True, 'EDIFF': 1e-8, "NELMIN": 6}}
+    # wf = get_wf_ferroelectric( polar_structure, nonpolar_structure, vasp_cmd=">>vasp_cmd<<",
+    #                           db_file='>>db_file<<', vasp_input_set_polar="MPStaticSet",
+    #                           vasp_input_set_nonpolar="MPStaticSet", relax=False,
+    #                           vasp_relax_input_set_polar=vasp_input_set_params,
+    #                           vasp_relax_input_set_nonpolar=vasp_input_set_params,
+    #                           nimages=5, hse=False, add_analysis_task=True,
+    #                           wfid=wfid, tags=None)
     wf = get_wf_ferroelectric( polar_structure, nonpolar_structure, vasp_cmd=">>vasp_cmd<<",
-                              db_file='>>db_file<<', vasp_input_set_polar="MPStaticSet",
-                              vasp_input_set_nonpolar="MPStaticSet", relax=False,
-                              vasp_relax_input_set_polar=vasp_input_set_params,
-                              vasp_relax_input_set_nonpolar=vasp_input_set_params,
+                              db_file='>>db_file<<', relax=False,
                               nimages=5, hse=False, add_analysis_task=True,
                               wfid=wfid, tags=None)
 
@@ -247,4 +252,4 @@ if __name__ == "__main__":
             pert_coords.append( site.coords)
     pert_struct = Structure( s.lattice, s.species, pert_coords, coords_are_cartesian=True)
 
-    polarization_wf(s, pert_struct, submit=False, wfid="TestPbTiO3")
+    polarization_wf(s, pert_struct, submit=True, wfid="TestPbTiO3")

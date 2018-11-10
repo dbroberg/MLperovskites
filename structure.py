@@ -9,6 +9,7 @@ from pymatgen.core import Element, Structure, Lattice
 
 allowed_struct_type = ['111', '211', 's2s21', 's2s22']
 
+
 class PerfectPerovskite(object):
 
     def __init__(self, Asite="Pb", Bsite="Ti", Osite="O",
@@ -234,10 +235,10 @@ def random_strain( max_strain):
 
 
 
-def print_all_types():
+def print_all_types(straining = False):
     from pymatgen.io.vasp import Poscar
     sclass = PerfectPerovskite()
-    straining = False
+
     for stype in allowed_struct_type:
 
         if straining:
@@ -264,4 +265,4 @@ def print_all_types():
 
 
 if __name__ == "__main__":
-    print_all_types()
+    print_all_types(straining = False)
