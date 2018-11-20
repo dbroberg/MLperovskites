@@ -132,6 +132,7 @@ def get_wf_timing( wf_id):
     lp = LaunchPad().from_file(lpad_file_path)
     wf = lp.get_wf_by_fw_id( wf_id)
     out_run_stats = []
+    just_non_polar_stats = []
     for fw in wf.fws:
         ld = fw.launches[-1].launch_dir
         out = None
@@ -141,6 +142,8 @@ def get_wf_timing( wf_id):
             out = Outcar( os.path.join( ld, 'OUTCAR.gz'))
         if out:
             out_run_stats.append( out.run_stats.copy())
+            if 'nonpolar_polarization' in fw.name:
+                just_non_polar_stats.append( out.run_stats.copy())
         ld += '/polarization'
         if os.path.exists( ld):
             out = None
@@ -150,10 +153,18 @@ def get_wf_timing( wf_id):
                 out = Outcar( os.path.join( ld, 'OUTCAR.gz'))
             if out:
                 out_run_stats.append( out.run_stats.copy())
-    print('Workflow retrieved {} Outcars'.format( len(out_run_stats)))
     cores = out_run_stats[0]['cores']
+    print('Workflow {} retrieved {} Outcars all run on {} cores'.format( wf.name, len(out_run_stats), cores))
     timestat = {k: 0 for k in ['Elapsed time (sec)', 'System time (sec)',
                                'User time (sec)', 'Total CPU time used (sec)']}
+    print('\nNon-Polar calc (non-polarization) alone took:')
+    if len( just_non_polar_stats) != 1:
+        raise ValueError("Too many non polar calcs?? = {}".format( len(just_non_polar_stats)))
+    else:
+        for k,v in just_non_polar_stats[0].items():
+            if k in timestat.keys():
+                print("\t{}: {}".format( k, round(v, 2)))
+
     for out in out_run_stats:
         if out['cores'] != cores:
             raise ValueError("Inconsisten number of cores for timing! {} vs {}".format( cores, out['cores']))
@@ -161,9 +172,9 @@ def get_wf_timing( wf_id):
             if k in timestat:
                 timestat[k] += v
 
-    print("\nSummary of timing:")
+    print("\nSummary of TOTAL wf timing:")
     for k,v in timestat.items():
-        print("\t{}: {}".format( k,v))
+        print("\t{}: {}".format( k, round(v, 2)))
     return
 
 """Perturbation workflow related"""
