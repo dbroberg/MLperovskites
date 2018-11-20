@@ -313,7 +313,7 @@ if __name__ == "__main__":
         print('\n-> Create workflow for {}'.format( struct_type))
         sp_class = StrainedPerovskite.generate_random_strain(bpc, structure_type=struct_type,
                                                              max_strain=0.06, perturb_amnt=None)
-        polarization_wf( sp_class.base, sp_class.structure, submit = False)
+        polarization_wf( sp_class.base, sp_class.structure, submit = True)
 
-        
+
     # get_wf_timing( 3809) #tester 111 PbTiO3 case
