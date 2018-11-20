@@ -116,7 +116,7 @@ def polarization_wf( polar_structure, nonpolar_structure, submit=False, wfid=Non
     wf = get_wf_ferroelectric( polar_structure, nonpolar_structure, vasp_cmd=">>vasp_cmd<<",
                               db_file='>>db_file<<', relax=False,
                               nimages=5, hse=False, add_analysis_task=True,
-                              wfid=wfid, tags=None) gzip_output
+                              wfid=wfid, tags=None) 
 
     print('workflow created with {} fws'.format( len(wf.fws)))
 
