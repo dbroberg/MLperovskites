@@ -13,7 +13,7 @@ from pymatgen.io.vasp import Poscar, Outcar
 from fireworks import Workflow
 from fireworks.core.launchpad import LaunchPad
 
-from structure import PerfectPerovskite
+from structure import PerfectPerovskite, StrainedPerovskite
 
 from pymatgen.io.vasp.sets import MPRelaxSet
 
@@ -304,4 +304,16 @@ if __name__ == "__main__":
     #
     # polarization_wf(s, pert_struct, submit=True, wfid="TestPbTiO3")
 
-    get_wf_timing( 3809)
+    # next test on several randomly generated structures (PbTiO3 still) to test timing
+    from pymatgen import MPRester
+    with MPRester() as mp:
+        s = mp.get_structure_by_material_id('mp-19845')
+    bpc = PerfectPerovskite( Asite="Pb", Bsite="Ti", Osite="O", lattconst=s.lattice.abc[0])
+    for struct_type in ['111', '211', 's2s21', 's2s22']:
+        print('\n-> Create workflow for {}'.format( struct_type))
+        sp_class = StrainedPerovskite.generate_random_strain(bpc, structure_type=struct_type,
+                                                             max_strain=0.06, perturb_amnt=None)
+        polarization_wf( sp_class.base, sp_class.structure, submit = False)
+
+        
+    # get_wf_timing( 3809) #tester 111 PbTiO3 case
