@@ -6,7 +6,7 @@ import os
 import numpy as np
 
 from pymatgen.core import Composition  #Element, Structure, Lattice
-from pymatgen.io.vasp import Poscar
+from pymatgen.io.vasp import Poscar, Outcar
 
 # from atomate.vasp.fireworks.core import StaticFW
 #
@@ -116,7 +116,7 @@ def polarization_wf( polar_structure, nonpolar_structure, submit=False, wfid=Non
     wf = get_wf_ferroelectric( polar_structure, nonpolar_structure, vasp_cmd=">>vasp_cmd<<",
                               db_file='>>db_file<<', relax=False,
                               nimages=5, hse=False, add_analysis_task=True,
-                              wfid=wfid, tags=None)
+                              wfid=wfid, tags=None) gzip_output
 
     print('workflow created with {} fws'.format( len(wf.fws)))
 
@@ -126,6 +126,45 @@ def polarization_wf( polar_structure, nonpolar_structure, submit=False, wfid=Non
         lp.add_wf(wf)
     else:
         return wf
+
+def get_wf_timing( wf_id):
+
+    lp = LaunchPad().from_file(lpad_file_path)
+    wf = lp.get_wf_by_fw_id( wf_id)
+    out_run_stats = []
+    for fw in wf.fws:
+        ld = fw.launches[-1].launch_dir
+        out = None
+        if 'OUTCAR' in os.listdir(ld):
+            out = Outcar.from_dict( os.path.join( ld, 'OUTCAR'))
+        elif 'OUTCAR.gz' in os.listdir(ld):
+            out = Outcar.from_dict( os.path.join( ld, 'OUTCAR.gz'))
+        if out:
+            out_run_stats.append( out.run_stats.copy())
+        ld += '/polarization'
+        if os.path.exists( ld):
+            out = None
+            if 'OUTCAR' in os.listdir(ld):
+                out = Outcar.from_dict( os.path.join( ld, 'OUTCAR'))
+            elif 'OUTCAR.gz' in os.listdir(ld):
+                out = Outcar.from_dict( os.path.join( ld, 'OUTCAR.gz'))
+            if out:
+                out_run_stats.append( out.run_stats.copy())
+    print('Workflow retrieved {} Outcars'.format( len(out_run_stats)))
+    cores = out_run_stats[0]['cores']
+    timestat = {k: 0 for k in ['Elapsed time (sec)', 'System time (sec)',
+                               'User time (sec)', 'Total CPU time used (sec)']}
+    for out in out_run_stats:
+        if out['cores'] != cores:
+            raise ValueError("Inconsisten number of cores for timing! {} vs {}".format( cores, out['cores']))
+        for k,v in out.items():
+            if k in timestat:
+                timestat[k] += v
+
+    print("\nSummary of timing:")
+    for k,v in timestat.items():
+        print("\t{}: {}".format( k,v))
+    return
 
 """Perturbation workflow related"""
 
@@ -241,15 +280,17 @@ if __name__ == "__main__":
 
     """Polarization related"""
     #first test on a known polar material (PbTiO3)
-    from pymatgen import MPRester, Structure
-    with MPRester() as mp:
-        s = mp.get_structure_by_material_id('mp-19845')
-    pert_coords = []
-    for site in s.sites:
-        if site.specie.symbol == 'Ti':
-            pert_coords.append( site.coords + np.array( [0., 0., 0.1]))
-        else:
-            pert_coords.append( site.coords)
-    pert_struct = Structure( s.lattice, s.species, pert_coords, coords_are_cartesian=True)
+    # from pymatgen import MPRester, Structure
+    # with MPRester() as mp:
+    #     s = mp.get_structure_by_material_id('mp-19845')
+    # pert_coords = []
+    # for site in s.sites:
+    #     if site.specie.symbol == 'Ti':
+    #         pert_coords.append( site.coords + np.array( [0., 0., 0.1]))
+    #     else:
+    #         pert_coords.append( site.coords)
+    # pert_struct = Structure( s.lattice, s.species, pert_coords, coords_are_cartesian=True)
+    #
+    # polarization_wf(s, pert_struct, submit=True, wfid="TestPbTiO3")
 
-    polarization_wf(s, pert_struct, submit=True, wfid="TestPbTiO3")
+    get_wf_timing( 3751)
