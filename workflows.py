@@ -116,7 +116,7 @@ def polarization_wf( polar_structure, nonpolar_structure, submit=False, wfid=Non
     wf = get_wf_ferroelectric( polar_structure, nonpolar_structure, vasp_cmd=">>vasp_cmd<<",
                               db_file='>>db_file<<', relax=False,
                               nimages=5, hse=False, add_analysis_task=True,
-                              wfid=wfid, tags=None) 
+                              wfid=wfid, tags=None)
 
     print('workflow created with {} fws'.format( len(wf.fws)))
 
@@ -136,18 +136,18 @@ def get_wf_timing( wf_id):
         ld = fw.launches[-1].launch_dir
         out = None
         if 'OUTCAR' in os.listdir(ld):
-            out = Outcar.from_dict( os.path.join( ld, 'OUTCAR'))
+            out = Outcar( os.path.join( ld, 'OUTCAR'))
         elif 'OUTCAR.gz' in os.listdir(ld):
-            out = Outcar.from_dict( os.path.join( ld, 'OUTCAR.gz'))
+            out = Outcar( os.path.join( ld, 'OUTCAR.gz'))
         if out:
             out_run_stats.append( out.run_stats.copy())
         ld += '/polarization'
         if os.path.exists( ld):
             out = None
             if 'OUTCAR' in os.listdir(ld):
-                out = Outcar.from_dict( os.path.join( ld, 'OUTCAR'))
+                out = Outcar( os.path.join( ld, 'OUTCAR'))
             elif 'OUTCAR.gz' in os.listdir(ld):
-                out = Outcar.from_dict( os.path.join( ld, 'OUTCAR.gz'))
+                out = Outcar( os.path.join( ld, 'OUTCAR.gz'))
             if out:
                 out_run_stats.append( out.run_stats.copy())
     print('Workflow retrieved {} Outcars'.format( len(out_run_stats)))
