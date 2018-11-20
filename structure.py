@@ -130,7 +130,7 @@ class StrainedPerovskite( object):
         return struct.copy()
 
     @staticmethod
-    def gen_random_strained_struct( base_perovskite_cls, structure_type = '111',
+    def generate_random_strain( base_perovskite_cls, structure_type = '111',
                                     max_strain = 0.06, perturb_amnt = None):
 
         strain_tensor = random_strain( max_strain)
@@ -155,12 +155,38 @@ class StrainedPerovskite( object):
         return StrainedPerovskite( base_perovskite_cls, strain_tensor,
                                    atomic_perturbations, structure_type=structure_type)
 
-    def initial_ML_input_data(self):
-        """latt consts, angles, atomic positions relative to 1st site, strain tensor"""
-        #TODO: make this...
+    @staticmethod
+    def generate_from_final_structures( perfect_structure, strained_structure):
+        """
+        From two structures
+        :param perfect_structure:
+        :param strained_structure:
+        :return:
+        """
+        if len(perfect_structure) != len(strained_structure):
+            raise ValueError("Inconsistent number of atoms!!")
 
-        return data
+        abc = perfect_structure.lattice.abc
+        if len(perfect_structure) == 5:
+            structure_type = '111'
+        elif len(perfect_structure) == 20:
+            structure_type = 's2s22'
+        elif abs( 1. - abc[1] / abc[2]) < 0.1:
+            structure_type = '211'
+        else:
+            structure_type = 's2s21'
 
+        #TODO: generate base perovskite class
+        if structure_type == 's2s22':
+            latt_const = abc[2]/2.
+        else:
+            latt_const = abc[2]
+
+        #TODO: get perturbation list (with periodic boundary conditions)
+
+        #TODO: create strain
+
+        return
 
 
 
@@ -265,4 +291,4 @@ def print_all_types(straining = False):
 
 
 if __name__ == "__main__":
-    print_all_types(straining = False)
+    print_all_types(straining = True)
