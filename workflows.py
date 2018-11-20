@@ -291,17 +291,17 @@ if __name__ == "__main__":
 
     """Polarization related"""
     #first test on a known polar material (PbTiO3)
-    from pymatgen import MPRester, Structure
-    with MPRester() as mp:
-        s = mp.get_structure_by_material_id('mp-19845')
-    pert_coords = []
-    for site in s.sites:
-        if site.specie.symbol == 'Ti':
-            pert_coords.append( site.coords + np.array( [0., 0., 0.25]))
-        else:
-            pert_coords.append( site.coords)
-    pert_struct = Structure( s.lattice, s.species, pert_coords, coords_are_cartesian=True)
+    # from pymatgen import MPRester, Structure
+    # with MPRester() as mp:
+    #     s = mp.get_structure_by_material_id('mp-19845')
+    # pert_coords = []
+    # for site in s.sites:
+    #     if site.specie.symbol == 'Ti':
+    #         pert_coords.append( site.coords + np.array( [0., 0., 0.25]))
+    #     else:
+    #         pert_coords.append( site.coords)
+    # pert_struct = Structure( s.lattice, s.species, pert_coords, coords_are_cartesian=True)
+    #
+    # polarization_wf(s, pert_struct, submit=True, wfid="TestPbTiO3")
 
-    polarization_wf(s, pert_struct, submit=True, wfid="TestPbTiO3")
-
-    # get_wf_timing( 3751)
+    get_wf_timing( 3809)
