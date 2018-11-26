@@ -325,6 +325,6 @@ if __name__ == "__main__":
     outset = {}
     for wf_id in [3823, 3830, 3837, 3844]:
         print("----> Doing {}".format(wf_id))
-        out = get_wf_timing( wf_id)
+        out = get_wf_timing( wf_id, returnval=True)
         outset[wf_id] = out
     print('\n------\n',outset)
