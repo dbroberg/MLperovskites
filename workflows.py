@@ -127,7 +127,7 @@ def polarization_wf( polar_structure, nonpolar_structure, submit=False, wfid=Non
     else:
         return wf
 
-def get_wf_timing( wf_id):
+def get_wf_timing( wf_id, returnval = False):
 
     lp = LaunchPad().from_file(lpad_file_path)
     wf = lp.get_wf_by_fw_id( wf_id)
@@ -175,7 +175,10 @@ def get_wf_timing( wf_id):
     print("\nSummary of TOTAL wf timing:")
     for k,v in timestat.items():
         print("\t{}: {}".format( k, round(v, 2)))
-    return
+    if not returnval:
+        return
+    else:
+        return {'tot': timestat, 'nonpolar': just_non_polar_stats}
 
 """Perturbation workflow related"""
 
@@ -305,15 +308,23 @@ if __name__ == "__main__":
     # polarization_wf(s, pert_struct, submit=True, wfid="TestPbTiO3")
 
     # next test on several randomly generated structures (PbTiO3 still) to test timing
-    from pymatgen import MPRester
-    with MPRester() as mp:
-        s = mp.get_structure_by_material_id('mp-19845')
-    bpc = PerfectPerovskite( Asite="Pb", Bsite="Ti", Osite="O", lattconst=s.lattice.abc[0])
-    for struct_type in ['111', '211', 's2s21', 's2s22']:
-        print('\n-> Create workflow for {}'.format( struct_type))
-        sp_class = StrainedPerovskite.generate_random_strain(bpc, structure_type=struct_type,
-                                                             max_strain=0.06, perturb_amnt=None)
-        polarization_wf( sp_class.base, sp_class.structure, submit = True)
+    # from pymatgen import MPRester
+    # with MPRester() as mp:
+    #     s = mp.get_structure_by_material_id('mp-19845')
+    # bpc = PerfectPerovskite( Asite="Pb", Bsite="Ti", Osite="O", lattconst=s.lattice.abc[0])
+    # for struct_type in ['111', '211', 's2s21', 's2s22']:
+    #     print('\n-> Create workflow for {}'.format( struct_type))
+    #     sp_class = StrainedPerovskite.generate_random_strain(bpc, structure_type=struct_type,
+    #                                                          max_strain=0.06, perturb_amnt=None)
+    #     polarization_wf( sp_class.base, sp_class.structure, submit = False)
 
 
     # get_wf_timing( 3809) #tester 111 PbTiO3 case
+
+    #tester wfids for distortions with 111, 211, s2s21, s2s22
+    outset = {}
+    for wf_id in [3823, 3830, 3837, 3844]:
+        print("----> Doing {}".format(wf_id))
+        out = get_wf_timing( wf_id)
+        outset[wf_id] = out
+    print('\n------\n',outset)

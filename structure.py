@@ -156,7 +156,8 @@ class StrainedPerovskite( object):
                                    atomic_perturbations, structure_type=structure_type)
 
     @staticmethod
-    def generate_from_final_structures( perfect_structure, strained_structure):
+    def generate_from_final_structures( perfect_structure, strained_structure,
+                                        guess_B_site = None):
         """
         From two structures
         :param perfect_structure:
@@ -176,17 +177,52 @@ class StrainedPerovskite( object):
         else:
             structure_type = 's2s21'
 
-        #TODO: generate base perovskite class
+        # generate base perovskite class
         if structure_type == 's2s22':
             latt_const = abc[2]/2.
         else:
             latt_const = abc[2]
 
-        #TODO: get perturbation list (with periodic boundary conditions)
+        red_comp = perfect_structure.composition.reduced_composition
+        assume_B_site = ["Ti", "Zr", "Nb", "Al", "Ta", "Sc", "Lu"]
+        if guess_B_site:
+            assume_B_site.extend([guess_B_site])
 
-        #TODO: create strain
+        for k,v in red_comp.items():
+            if v == 3.:
+                Osite = k.symbol
+            elif k.symbol in assume_B_site:
+                Bsite = k.symbol
+            else:
+                Asite = k.symbol
 
-        return
+        base_pv = PerfectPerovskite(Asite=Asite, Bsite=Bsite,
+                                    Osite=Osite, lattconst=latt_const)
+
+        # get perturbation list (with periodic boundary conditions and accounting for different lattices)
+        atomic_perturbations = []
+        for site_init, site_final in zip(perfect_structure, strained_structure):
+            frac_final_site_in_perf_lattice = perfect_structure.lattice.get_fractional_coords( site_final.coords)
+            dist, jimage = site_init.distance_and_image_from_frac_coords(frac_final_site_in_perf_lattice)
+            vec_init_to_final = perfect_structure.lattice.get_cartesian_coords(frac_final_site_in_perf_lattice -
+                                                                                jimage - site_init.frac_coords)
+            atomic_perturbations.append( vec_init_to_final[:])
+
+        # get lattice strain
+        original_lattice_matrix = perfect_structure.lattice.matrix
+        strained_lattice = strained_structure.lattice.matrix
+        strain_tensor = np.dot( np.linalg.pinv( original_lattice_matrix),
+                                strained_lattice)
+        strain_tensor = strain_tensor.T
+
+        confirm_strained_lattice = perform_strain( original_lattice_matrix,  strain_tensor)
+        if Lattice(confirm_strained_lattice) != Lattice(strained_lattice):
+            raise ValueError("Problem matching strain. Generated lattice:\n{}\n"
+                             "Correct Strained Lattice:\n{}".format( confirm_strained_lattice,
+                                                                     strained_lattice))
+
+        return StrainedPerovskite( base_pv, strain_tensor,
+                                   atomic_perturbations, structure_type=structure_type)
 
 
 
@@ -268,8 +304,8 @@ def print_all_types(straining = False):
     for stype in allowed_struct_type:
 
         if straining:
-            strained = StrainedPerovskite.gen_random_strained_struct(sclass, structure_type=stype,
-                                                                     max_strain=0.06, perturb_amnt=None)
+            strained = StrainedPerovskite.generate_random_strain(sclass, structure_type=stype,
+                                                                 max_strain=0.06, perturb_amnt=None)
             s = strained.structure
             print('\n\n--->', stype)
             print('\tstrain = ', strained.strain_tensor)
@@ -291,4 +327,31 @@ def print_all_types(straining = False):
 
 
 if __name__ == "__main__":
-    print_all_types(straining = True)
+    # print_all_types(straining = True)
+
+    """Testing strained struct generation from structures"""
+    sclass = PerfectPerovskite()
+    # from pymatgen.analysis.structure_matcher import StructureMatcher
+    # sm = StructureMatcher(primitive_cell=False, scale=False, attempt_supercell=False, allow_subset=False)
+    for stype in allowed_struct_type:
+        print("Trying perturbed structure re-gen for {}".format( stype))
+        strain_class = StrainedPerovskite.generate_random_strain(sclass, structure_type=stype,
+                                                                 max_strain=0.06, perturb_amnt=None)
+        og_strain_struct = strain_class.structure.copy()
+        new_strain_class = StrainedPerovskite.generate_from_final_structures( strain_class.base, og_strain_struct)
+
+        # if not sm.fit( og_strain_struct, new_strain_class.structure):
+        coord_compare = np.linalg.norm( np.subtract( og_strain_struct.cart_coords.flatten(),
+                                        new_strain_class.structure.cart_coords.flatten()))
+        og_lattset = list(og_strain_struct.lattice.abc)
+        og_lattset.extend( list(og_strain_struct.lattice.angles))
+        new_lattset = list(new_strain_class.structure.lattice.abc)
+        new_lattset.extend( list(new_strain_class.structure.lattice.angles))
+        latt_compare = np.linalg.norm( np.subtract( og_lattset, new_lattset))
+        if coord_compare > 1e-5 or latt_compare > 1e-5:
+            raise ValueError("Structure fitting failed for {}\ncoord score = {},"
+                             " latt score = {}".format( stype, coord_compare, latt_compare))
+        else:
+            print("\tTest passed!")
+
+
