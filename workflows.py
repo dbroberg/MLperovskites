@@ -322,7 +322,7 @@ if __name__ == "__main__":
     pert_coords[1] += np.array([0., 0., 1.24 * 3.844 * 0.058])
     pert_struct = Structure( lattice, species, pert_coords, coords_are_cartesian=True)
 
-    polarization_wf(perfect_struct, pert_struct, submit=False, wfid="TestTetragonalPbTiO3")
+    polarization_wf(perfect_struct, pert_struct, submit=True, wfid="TestTetragonalPbTiO3")
 
 
     # next test on several randomly generated structures (PbTiO3 still) to test timing
