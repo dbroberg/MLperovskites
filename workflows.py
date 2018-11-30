@@ -327,12 +327,18 @@ if __name__ == "__main__":
     #TRY above test again... with MPRester on
     from pymatgen import MPRester, Structure
     with MPRester() as mp:
-        perfect_struct = mp.get_structure_by_material_id('mp-19845')
+        tmp_perfect_struct = mp.get_structure_by_material_id('mp-19845')
         pert_struct = mp.get_structure_by_material_id('mp-20459')
-
+    # reorder perfect structure sites as Ti, Pb, O, O, O
+    perfect_struct = Structure( tmp_perfect_struct.lattice,
+                                [tmp_perfect_struct.species[ind] for ind in [3, 4, 0, 1, 2]],
+                                [tmp_perfect_struct.cart_coords[ind] for ind in [3, 4, 0, 1, 2]],
+                                coords_are_cartesian=True)
+    if perfect_struct.species != pert_struct.species:
+        raise ValueError("WRONG ORDER OF SPECIES: {} vs {}".format( perfect_struct.species, pert_struct.species))
     polarization_wf(perfect_struct, pert_struct, submit=False, wfid="Test2TetragonalPbTiO3")
 
-    # third test on several randomly generated structures (cubic PbTiO3 ) to test timing
+    # test on several randomly generated structures (cubic PbTiO3 ) to test timing
     # from pymatgen import MPRester
     # with MPRester() as mp:
     #     s = mp.get_structure_by_material_id('mp-19845')
