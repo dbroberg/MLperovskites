@@ -1,4 +1,4 @@
-"""For setting static perovskite"""
+"""For submitting workflows for perovskites"""
 
 lpad_file_path = '/global/homes/d/dbroberg/atomate_fworkers/my_launchpad.yaml'
 
@@ -323,6 +323,14 @@ if __name__ == "__main__":
     # pert_struct = Structure( lattice, species, pert_coords, coords_are_cartesian=True)
     #
     # polarization_wf(perfect_struct, pert_struct, submit=False, wfid="TestTetragonalPbTiO3")
+
+    #TRY above test again... with MPRester on
+    from pymatgen import MPRester, Structure
+    with MPRester() as mp:
+        perfect_struct = mp.get_structure_by_material_id('mp-19845')
+        pert_struct = mp.get_structure_by_material_id('mp-20459')
+
+    polarization_wf(perfect_struct, pert_struct, submit=False, wfid="Test2TetragonalPbTiO3")
 
     # third test on several randomly generated structures (cubic PbTiO3 ) to test timing
     # from pymatgen import MPRester
