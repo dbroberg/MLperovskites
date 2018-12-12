@@ -104,6 +104,9 @@ def parse_wf_for_latt_constants( wf_id):
 
 def polarization_wf( polar_structure, nonpolar_structure, submit=False, wfid=None):
 
+    if polar_structure.species != nonpolar_structure.species:
+        raise ValueError("WRONG ORDER OF SPECIES: {} vs {}".format( polar_structure.species, nonpolar_structure.species))
+
     #TODO hack ability to add incar settings...
     # vasp_input_set_params = {'user_incar_settings': {"ADDGRID": True, 'EDIFF': 1e-8, "NELMIN": 6}}
     # wf = get_wf_ferroelectric( polar_structure, nonpolar_structure, vasp_cmd=">>vasp_cmd<<",
@@ -115,7 +118,7 @@ def polarization_wf( polar_structure, nonpolar_structure, submit=False, wfid=Non
     #                           wfid=wfid, tags=None)
     wf = get_wf_ferroelectric( polar_structure, nonpolar_structure, vasp_cmd=">>vasp_cmd<<",
                               db_file='>>db_file<<', relax=False,
-                              nimages=5, hse=False, add_analysis_task=True,
+                              nimages=9, hse=False, add_analysis_task=True,
                               wfid=wfid, tags=None)
 
     print('workflow created with {} fws'.format( len(wf.fws)))
@@ -334,9 +337,7 @@ if __name__ == "__main__":
                                 [tmp_perfect_struct.species[ind] for ind in [3, 4, 0, 1, 2]],
                                 [tmp_perfect_struct.cart_coords[ind] for ind in [3, 4, 0, 1, 2]],
                                 coords_are_cartesian=True)
-    if perfect_struct.species != pert_struct.species:
-        raise ValueError("WRONG ORDER OF SPECIES: {} vs {}".format( perfect_struct.species, pert_struct.species))
-    polarization_wf(perfect_struct, pert_struct, submit=False, wfid="Test2TetragonalPbTiO3")
+    polarization_wf(perfect_struct, pert_struct, submit=False, wfid="Test3TetragonalPbTiO3")
 
     # test on several randomly generated structures (cubic PbTiO3 ) to test timing
     # from pymatgen import MPRester
