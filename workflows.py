@@ -297,18 +297,19 @@ if __name__ == "__main__":
 
     """Polarization testing related"""
     #first test on a cubic material (PbTiO3)
-    # from pymatgen import MPRester, Structure
-    # with MPRester() as mp:
-    #     s = mp.get_structure_by_material_id('mp-19845')
-    # pert_coords = []
-    # for site in s.sites:
-    #     if site.specie.symbol == 'Ti':
-    #         pert_coords.append( site.coords + np.array( [0., 0., 0.25]))
-    #     else:
-    #         pert_coords.append( site.coords)
-    # pert_struct = Structure( s.lattice, s.species, pert_coords, coords_are_cartesian=True)
-    #
+    from pymatgen import MPRester, Structure
+    with MPRester() as mp:
+        s = mp.get_structure_by_material_id('mp-19845')
+    pert_coords = []
+    for site in s.sites:
+        if site.specie.symbol == 'Ti':
+            pert_coords.append( site.coords + np.array( [0., 0., 0.25]))
+        else:
+            pert_coords.append( site.coords)
+    pert_struct = Structure( s.lattice, s.species, pert_coords, coords_are_cartesian=True)
+
     # polarization_wf(s, pert_struct, submit=True, wfid="TestPbTiO3")
+    polarization_wf(s, pert_struct, submit=True, wfid="BasicTessTestPbTiO3")
 
     # #second test on a tetragonal (known polar) material (PbTiO3)
     # #recreate this arxiv paper's result: https://arxiv.org/pdf/1702.04817.pdf
@@ -327,19 +328,19 @@ if __name__ == "__main__":
     #
     # polarization_wf(perfect_struct, pert_struct, submit=False, wfid="TestTetragonalPbTiO3")
 
-    #TRY above test again... with MPRester on
-    from pymatgen import MPRester, Structure
-    with MPRester() as mp:
-        tmp_perfect_struct = mp.get_structure_by_material_id('mp-19845')
-        pert_struct = mp.get_structure_by_material_id('mp-20459')
-    # reorder perfect structure sites as Ti, Pb, O, O, O
-    perfect_struct = Structure( tmp_perfect_struct.lattice,
-                                [tmp_perfect_struct.species[ind] for ind in [3, 4, 0, 1, 2]],
-                                [tmp_perfect_struct.cart_coords[ind] for ind in [3, 4, 0, 1, 2]],
-                                coords_are_cartesian=True)
-    polarization_wf(perfect_struct, pert_struct, submit=False, wfid="Test3TetragonalPbTiO3")
+    # #TRY above test again... with MPRester on
+    # from pymatgen import MPRester, Structure
+    # with MPRester() as mp:
+    #     tmp_perfect_struct = mp.get_structure_by_material_id('mp-19845')
+    #     pert_struct = mp.get_structure_by_material_id('mp-20459')
+    # # reorder perfect structure sites as Ti, Pb, O, O, O
+    # perfect_struct = Structure( tmp_perfect_struct.lattice,
+    #                             [tmp_perfect_struct.species[ind] for ind in [3, 4, 0, 1, 2]],
+    #                             [tmp_perfect_struct.cart_coords[ind] for ind in [3, 4, 0, 1, 2]],
+    #                             coords_are_cartesian=True)
+    # polarization_wf(perfect_struct, pert_struct, submit=False, wfid="Test3TetragonalPbTiO3")
 
-    # test on several randomly generated structures (cubic PbTiO3 ) to test timing
+    # # test on several randomly generated structures (cubic PbTiO3 ) to test timing
     # from pymatgen import MPRester
     # with MPRester() as mp:
     #     s = mp.get_structure_by_material_id('mp-19845')
