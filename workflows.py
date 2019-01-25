@@ -309,7 +309,7 @@ if __name__ == "__main__":
     pert_struct = Structure( s.lattice, s.species, pert_coords, coords_are_cartesian=True)
 
     # polarization_wf(s, pert_struct, submit=True, wfid="TestPbTiO3")
-    polarization_wf(s, pert_struct, submit=True, wfid="BasicTessTestPbTiO3")
+    polarization_wf(s, pert_struct, submit=True, wfid="BasicTessTestPbTiO3x2")
 
     # #second test on a tetragonal (known polar) material (PbTiO3)
     # #recreate this arxiv paper's result: https://arxiv.org/pdf/1702.04817.pdf
