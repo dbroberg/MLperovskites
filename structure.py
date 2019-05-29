@@ -1,5 +1,6 @@
 """For setting static perovskite"""
 
+#NOTE: user should change this to their own launchpad path
 lpad_file_path = '/global/homes/d/dbroberg/atomate_fworkers/my_launchpad.yaml'
 
 import random

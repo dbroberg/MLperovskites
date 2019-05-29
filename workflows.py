@@ -1,15 +1,14 @@
 """For submitting workflows for perovskites"""
 
-lpad_file_path = '/global/homes/d/dbroberg/atomate_fworkers/my_launchpad.yaml'
+#NOTE: user should change this to their own launchpad path
+# lpad_file_path = '/global/homes/d/dbroberg/atomate_fworkers/my_launchpad.yaml'
+lpad_file_path = '/Users/dpbroberg/bin/my_launchpad.yaml'
 
 import os
-import numpy as np
 
 from pymatgen.core import Composition  #Element, Structure, Lattice
 from pymatgen.io.vasp import Poscar, Outcar
 
-# from atomate.vasp.fireworks.core import StaticFW
-#
 from fireworks import Workflow
 from fireworks.core.launchpad import LaunchPad
 
@@ -19,6 +18,8 @@ from pymatgen.io.vasp.sets import MPRelaxSet
 
 from atomate.vasp.fireworks.core import OptimizeFW
 from atomate.vasp.workflows.base.ferroelectric import get_wf_ferroelectric
+
+from monty.serialization import dumpfn, loadfn
 
 """Lattice constant workflow related"""
 
@@ -100,31 +101,34 @@ def parse_wf_for_latt_constants( wf_id):
     return lattdata
 
 
-"""LCALCEPs workflow related"""
+"""LCALCEPs workflow testing related"""
 
-def polarization_wf( polar_structure, nonpolar_structure, submit=False, wfid=None):
+def polarization_wf( polar_structure, nonpolar_structure, submit=False, nimages=8,
+                     user_incar_settings = {}, tags = []):
+    """
+
+    :param polar_structure: structure of polar structure
+    :param nonpolar_structure: structure of nonpolar structure
+    :param submit: boolean for submitting
+    :param tags: list of string tags
+    :return:
+    """
 
     if polar_structure.species != nonpolar_structure.species:
         raise ValueError("WRONG ORDER OF SPECIES: {} vs {}".format( polar_structure.species, nonpolar_structure.species))
 
-    #TODO hack ability to add incar settings...
-    # vasp_input_set_params = {'user_incar_settings': {"ADDGRID": True, 'EDIFF': 1e-8, "NELMIN": 6}}
-    # wf = get_wf_ferroelectric( polar_structure, nonpolar_structure, vasp_cmd=">>vasp_cmd<<",
-    #                           db_file='>>db_file<<', vasp_input_set_polar="MPStaticSet",
-    #                           vasp_input_set_nonpolar="MPStaticSet", relax=False,
-    #                           vasp_relax_input_set_polar=vasp_input_set_params,
-    #                           vasp_relax_input_set_nonpolar=vasp_input_set_params,
-    #                           nimages=5, hse=False, add_analysis_task=True,
-    #                           wfid=wfid, tags=None)
+    vasp_input_set_params = {'user_incar_settings': user_incar_settings}
     wf = get_wf_ferroelectric( polar_structure, nonpolar_structure, vasp_cmd=">>vasp_cmd<<",
-                              db_file='>>db_file<<', relax=False,
-                              nimages=9, hse=False, add_analysis_task=True,
-                              wfid=wfid, tags=None)
+                              db_file='>>db_file<<', vasp_input_set_polar="MPStaticSet",
+                              vasp_input_set_nonpolar="MPStaticSet", relax=False,
+                              vasp_relax_input_set_polar=vasp_input_set_params,
+                              vasp_relax_input_set_nonpolar=vasp_input_set_params,
+                              nimages=nimages, hse=False, add_analysis_task=True, tags=tags)
 
     print('workflow created with {} fws'.format( len(wf.fws)))
 
     if submit:
-        print("Submitting Polarization workflow")
+        print("\tSubmitting Polarization workflow")
         lp = LaunchPad().from_file( lpad_file_path)
         lp.add_wf(wf)
     else:
@@ -185,78 +189,39 @@ def get_wf_timing( wf_id, returnval = False):
 
 """Perturbation workflow related"""
 
-class PerturbWFsetup(object):
-    def __init__(self, perovskite, structure_type='111',
-                 Nstruct = 100, perturbamnt=None,
-                 vasp_cmd=">>vasp_cmd<<", db_file=">>db_file<<"):
-
-        self.perovskite = perovskite
-
-        self.Nstruct = Nstruct
+def perturb_wf_setup( perovskite, structure_type='111',
+                      Nstruct = 100, perturbamnt=None, max_strain=0.06,
+                      nimages = 8, tags = []):
 
         if perturbamnt is None:
             perturbamnt = perovskite.lattconst * 0.04
-        self.perturbamnt = perturbamnt
 
-        self.vasp_cmd = vasp_cmd
-        self.db_file = db_file
+        print("Setting up {} different perturbation polarization approaches\nMax strain = {}, "
+              "Perturbation amount = {}".format( Nstruct, max_strain, perturbamnt))
 
         allowed_struct_type = ['111', '211', 's2s21', 's2s22']
         if structure_type not in allowed_struct_type:
             raise ValueError("{} not in {}".format( structure_type,
                                                     allowed_struct_type))
 
-        self.structure_type = structure_type
-        if self.structure_type == '111':
-            self.base = perovskite.get_111_struct().copy()
-        elif self.structure_type == '211':
-            self.base = perovskite.get_211_struct().copy()
-        elif self.structure_type == 's2s21':
-            self.base = perovskite.get_sqrt2_1_struct().copy()
-        elif self.structure_type == 's2s22':
-            self.base = perovskite.get_sqrt2_2_struct().copy()
+        fws = []
+        pert_N_structs = [perovskite.get_struct_from_structure_type( structure_type).as_dict()]
+        user_incar_settings = {"ADDGRID": True, 'EDIFF': 1e-8, "NELMIN": 6}
+        for nind in range(Nstruct):
+            sclass = PerfectPerovskite( Asite= perovskite.eltA, Bsite= perovskite.eltB, Osite= perovskite.eltC,
+                                        lattconst=perovskite.lattconst )
+            strain_class = StrainedPerovskite.generate_random_strain( sclass, structure_type=structure_type,
+                                                                     max_strain=max_strain, perturb_amnt=perturbamnt)
 
+            tmp_wf = polarization_wf( strain_class.structure, strain_class.base, submit=False, nimages=nimages,
+                                      user_incar_settings=user_incar_settings, tags = tags)
+            fws.extend( tmp_wf.fws)
+            pert_N_structs.append( strain_class.structure.as_dict())
 
-    # def _setup_perturbed_structs(self):
-    #     self.track_N_structs = []
-    #     for nind in range(self.Nstruct):
-    #         thisstruct = self.sc_struct.copy()
-    #         thisstruct.perturb( self.perturbamnt)
-    #         self.track_N_structs.append( thisstruct)
-    #
-    #
-    # def setup_wf(self, wfname=None):
-    #     fws = []
-    #
-    #     incar_settings = {""} #TODO specify these...
-    #
-    #     short_name = self.base_struct.composition.pretty_formula
-    #
-    #     for struct_ind, struct in enumerate( self.track_N_structs):
-    #         stat_fw = StaticFW(structure=struct.copy(),
-    #                                name=short_name+'_Static_'+str(struct_ind),
-    #                                vasp_input_settings = {"user_incar_settings": incar_settings},
-    #                                vasp_cmd=self.vasp_cmd, db_file=self.db_file)
-    #         fws.append( stat_fw.copy())
-    #
-    #     print('Setup {} workflow with {} fireworks'.format( short_name, self.Nstruct))
-    #
-    #     if wfname is None:
-    #         wfname = 'PerovskiteWF_'+str(short_name)
-    #
-    #     wf = Workflow(fws, name=wfname)
-    #
-    #     return wf
-    #
-    # def submit_wf(self, lpad=None, wfname=None):
-    #
-    #     wf = self.setup_wf(wfname = wfname)
-    #
-    #     if lpad is None:
-    #         lpad = LaunchPad().from_file(lpad_file_path)
-    #
-    #     lpad.add_wf( wf)
-
+        print("Submitting Polarization workflow with {} fireworks".format( len(fws)))
+        wf = Workflow( fws)
+        lp = LaunchPad().from_file( lpad_file_path)
+        lp.add_wf(wf)
 
 if __name__ == "__main__":
     init_list = [['Sr', 'Ti', 'O'],
@@ -297,19 +262,19 @@ if __name__ == "__main__":
 
     """Polarization testing related"""
     #first test on a cubic material (PbTiO3)
-    from pymatgen import MPRester, Structure
-    with MPRester() as mp:
-        s = mp.get_structure_by_material_id('mp-19845')
-    pert_coords = []
-    for site in s.sites:
-        if site.specie.symbol == 'Ti':
-            pert_coords.append( site.coords + np.array( [0., 0., 0.25]))
-        else:
-            pert_coords.append( site.coords)
-    pert_struct = Structure( s.lattice, s.species, pert_coords, coords_are_cartesian=True)
+    # from pymatgen import MPRester, Structure
+    # with MPRester() as mp:
+    #     s = mp.get_structure_by_material_id('mp-19845')
+    # pert_coords = []
+    # for site in s.sites:
+    #     if site.specie.symbol == 'Ti':
+    #         pert_coords.append( site.coords + np.array( [0., 0., 0.25]))
+    #     else:
+    #         pert_coords.append( site.coords)
+    # pert_struct = Structure( s.lattice, s.species, pert_coords, coords_are_cartesian=True)
 
     # polarization_wf(s, pert_struct, submit=True, wfid="TestPbTiO3")
-    polarization_wf(s, pert_struct, submit=True, wfid="BasicTessTestPbTiO3x2")
+    # polarization_wf(s, pert_struct, submit=True, wfid="BasicTessTestPbTiO3x2")
 
     # #second test on a tetragonal (known polar) material (PbTiO3)
     # #recreate this arxiv paper's result: https://arxiv.org/pdf/1702.04817.pdf
@@ -360,3 +325,19 @@ if __name__ == "__main__":
     #     out = get_wf_timing( wf_id, returnval=True)
     #     outset[wf_id] = out
     # print('\n------\n',outset)
+
+    """Polarization workflow generation related"""
+
+    #test with random distortions with above chemistry
+    latt_consts = loadfn( 'latt_consts.json')['gga']
+    for scomp in [init_list[0]]:
+        print(scomp)
+        skey = ''.join(scomp) + '3'
+        if skey not in latt_consts:
+            raise ValueError("{} is not in the lattice constants dictionary!".format(skey))
+        perovskite = PerfectPerovskite( Asite= scomp[0], Bsite= scomp[1], Osite= scomp[2],
+                                        lattconst=latt_consts[skey])
+        perturb_wf_setup(perovskite, structure_type='111',
+                         Nstruct=2, perturbamnt=None, max_strain=0.06,
+                         nimages=5, tags=['danny_test_polar'])
+
